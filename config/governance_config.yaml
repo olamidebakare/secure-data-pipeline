@@ -1,0 +1,75 @@
+# Governance Configuration for Secure Data Pipeline
+# Author: Olamide Bakare
+
+pipeline:
+  name: healthcare_patient_etl
+  version: "1.0"
+  environment: production
+
+# Define which fields are considered sensitive (PII)
+sensitive_fields:
+  - name
+  - date_of_birth
+  - email
+  - phone
+  - diagnosis
+  - address
+  - national_insurance_number
+
+# Masking strategies for non-production environments
+masking_rules:
+  name:
+    strategy: partial
+    visible_chars: 2
+  date_of_birth:
+    strategy: generalise
+  email:
+    strategy: hash
+    salt: "governance-2025"
+  phone:
+    strategy: partial
+    visible_chars: 4
+  diagnosis:
+    strategy: redact
+  address:
+    strategy: redact
+  national_insurance_number:
+    strategy: hash
+
+# Role-based access control
+roles:
+  dashboard_viewer:
+    access_level: READ_AGGREGATED
+    allowed_fields:
+      - department
+      - visit_count
+      - avg_wait_time
+    description: "Dashboard users — aggregated data only"
+
+  analyst:
+    access_level: READ_MASKED
+    allowed_fields: null  # All fields, but PII masked
+    description: "Analysts — can view data with PII masked"
+
+  clinician:
+    access_level: READ_FULL
+    allowed_fields: null
+    description: "Clinical staff — full patient data access"
+
+  data_engineer:
+    access_level: ADMIN
+    allowed_fields: null
+    description: "Pipeline maintenance — full access"
+
+# Data retention
+retention:
+  patient_records:
+    duration_years: 7
+    review_frequency: annual
+    deletion_method: secure_overwrite
+
+# Audit settings
+audit:
+  log_file: logs/audit_log.json
+  log_level: INFO
+  retention_days: 365
